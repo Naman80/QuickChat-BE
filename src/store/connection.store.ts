@@ -29,9 +29,7 @@ export function getWsConnectionData(
   ws: WebSocket
 ): WsConnectionMeta | undefined {
   // if present return if not ??
-  const WsConnectionData = WsConnectionsData.get(ws);
-
-  return WsConnectionData;
+  return WsConnectionsData.get(ws);
 }
 
 export function getAllWsConnectionData() {

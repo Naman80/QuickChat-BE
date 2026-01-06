@@ -29,11 +29,12 @@ export function handleConnection(
     ws.close();
     // then perform further operations on it.
 
-    // remove connections
-    removeWsConnection(ws);
-
     // remove ws from all rooms
-    removeClientFromRooms(ws);
+    removeClientFromRooms(ws); // first cuz we want to get all the rooms
+
+    // remove connections
+    removeWsConnection(ws); // second : deleting entire ws related data
+
     console.log("WS connection closed");
   });
 }
