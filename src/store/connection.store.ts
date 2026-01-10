@@ -28,7 +28,7 @@ export function removeWsConnection(ws: WebSocket) {
 export function getWsConnectionData(
   ws: WebSocket
 ): WsConnectionMeta | undefined {
-  // if present return if not ??
+  // if present return | if not ??
   return WsConnectionsData.get(ws);
 }
 

@@ -34,6 +34,8 @@ export function removeClientFromRooms(ws: WebSocket) {
 
   const allRooms = WsConnectionData?.rooms;
 
+  console.log(allRooms, "all rooms ws has joined");
+
   allRooms?.forEach((roomId) => {
     const allSocketSet = rooms.get(roomId);
     if (allSocketSet) {

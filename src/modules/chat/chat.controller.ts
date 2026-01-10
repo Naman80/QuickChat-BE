@@ -17,6 +17,8 @@ export function handleChatMessage(
     return;
   }
 
+  console.log(message, "this is data message");
+
   switch (message.type) {
     case WS_EVENTS.JOIN_ROOM:
       handleJoinRoom(ws, message);
