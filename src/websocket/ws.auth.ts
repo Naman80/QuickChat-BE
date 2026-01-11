@@ -5,6 +5,8 @@ export function authenticateWs(req: any) {
 
   const token = new URL(req.url, "http://x").searchParams.get("token");
 
+  console.log(token);
+
   if (!token) throw new Error("No token");
 
   const payload = verifyJwt(token);

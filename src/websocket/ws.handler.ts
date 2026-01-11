@@ -42,7 +42,9 @@ export function handleConnection(
 
       console.log("WS connection closed");
     });
-  } catch {
+  } catch (e: any) {
+    console.log("error ", e.message);
+
     ws.close();
 
     return;

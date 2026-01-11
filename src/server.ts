@@ -1,14 +1,30 @@
-import http from "http";
-import app from "./app.ts";
+import express from "express";
+import { createServer } from "http";
+import routes from "./routes/index.ts";
 import { initWebSocket } from "./websocket/index.ts";
 
-export function startServer() {
-  const server = http.createServer(app);
+const app = express();
 
-  // initialising web socket server
-  initWebSocket(server);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(routes);
 
-  server.listen(8080, () => {
-    console.log("Server running on port 8080");
-  });
-}
+const httpServer = createServer(app);
+
+// this will handle all the upgrade requests
+httpServer.on("upgrade", (req, socket, head) => {
+  console.log(req.url);
+
+  console.log("connection upgrade req");
+
+  // we can destroy the connection here only if person is not authenticated.
+  // socket.destroy();
+});
+
+initWebSocket({ server: httpServer });
+
+const PORT = process.env.PORT || 8080;
+
+httpServer.listen(PORT, () => {
+  console.log(`Server + WebSocket running on http://localhost:${PORT}`);
+});
