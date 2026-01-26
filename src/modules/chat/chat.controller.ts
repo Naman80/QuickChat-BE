@@ -3,10 +3,13 @@ import type { WSMessage } from "../../websocket/ws.types.ts";
 import { WS_EVENTS } from "../../websocket/ws.events.ts";
 import { handleJoinRoom, handleSendMessage } from "./chat.service.ts";
 
+// Chat Controller is for Real-time communication handling.
+// To handle conversations api route please look at conversation.controller.ts
+
 export function handleChatMessage(
   ws: WebSocket,
   rawData: RawData,
-  wss: WebSocketServer
+  wss: WebSocketServer,
 ) {
   let message: WSMessage;
 
@@ -33,7 +36,7 @@ export function handleChatMessage(
         JSON.stringify({
           type: WS_EVENTS.ERROR,
           payload: "Unknown message type",
-        })
+        }),
       );
   }
 }

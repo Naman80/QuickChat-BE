@@ -1,6 +1,8 @@
 
-/.DS_Store
+.DS_Store
 
-/node_modules
-/dist
-/.env
+node_modules
+dist
+.env
+src/generated/prisma
+generated

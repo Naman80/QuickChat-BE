@@ -1,11 +1,11 @@
 import { verifyJwt } from "../utils/jwt.ts";
 
 export function authenticateWs(req: any) {
-  console.log(req, " ", req.url, "WS AUTH");
+  // console.log(req, " ", req.url, "WS AUTH");
 
   const token = new URL(req.url, "http://x").searchParams.get("token");
 
-  console.log(token);
+  console.log("Authenticate WS Token", token);
 
   if (!token) throw new Error("No token");
 

@@ -4,14 +4,13 @@ import {
   registerWsConnection,
   removeWsConnection,
 } from "../store/connection.store.ts";
-import { randomUUID } from "crypto";
 import { removeClientFromRooms } from "../store/rooms.store.ts";
 import { authenticateWs } from "./ws.auth.ts";
 
 export function handleConnection(
   ws: WebSocket,
   req: any,
-  wss: WebSocketServer
+  wss: WebSocketServer,
 ) {
   console.log("New WS connection");
   console.log("Number of ws clients connected", wss.clients.size);
@@ -20,8 +19,6 @@ export function handleConnection(
     // this is not coorect blocker for ws request to connect // TODO : fix this
     const userId = authenticateWs(req);
 
-    // user will have some userId
-    // const userId = randomUUID();
     // managing ws connections - custom logic
     registerWsConnection(ws, userId);
 
@@ -44,9 +41,8 @@ export function handleConnection(
     });
   } catch (e: any) {
     console.log("error ", e.message);
+    console.log("WS connection closed");
 
     ws.close();
-
-    return;
   }
 }

@@ -1,0 +1,13 @@
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  createdAt DateTime @default(now())
+
+  //just for completing prisma graph
+  messages                Message[]                 @relation("messageSender")
+  conversationParticipant ConversationParticipant[]
+  messageUserStates       MessageUserState[]
+
+  @@map("User")
+}

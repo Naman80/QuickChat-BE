@@ -4,7 +4,11 @@ import { WebSocketServer } from "ws";
 
 export function initWebSocket({ server }: { server: Server }) {
   // create new ws server.
-  const wss = new WebSocketServer({ server });
+  const wss = new WebSocketServer({
+    server,
+    clientTracking: true,
+    maxPayload: 128 * 1024, // 128KB
+  });
 
   wss.on("connection", (ws, req) => {
     console.log("inside ws connection");

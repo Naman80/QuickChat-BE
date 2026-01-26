@@ -13,21 +13,24 @@ import { WS_EVENTS } from "../../websocket/ws.events.ts";
 export function handleJoinRoom(ws: WebSocket, message: WSMessage) {
   const { roomId } = message.payload;
   const connection = getWsConnectionData(ws);
+  console.log(connection);
 
   if (!connection) return;
 
-  // this handling should not be here
-  joinConnectionRoom(roomId, ws);
+  // this should be in transaction
 
   // join the room
   joinRoom(roomId, ws);
+
+  // this handling should not be here
+  joinConnectionRoom(roomId, ws);
 
   // you joined this room.
   ws.send(
     JSON.stringify({
       type: WS_EVENTS.USER_JOINED,
       payload: { roomId },
-    })
+    }),
   );
 }
 
@@ -41,7 +44,7 @@ export function handleSendMessage(ws: WebSocket, message: WSMessage) {
       JSON.stringify({
         type: WS_EVENTS.ERROR,
         payload: "Not part of room",
-      })
+      }),
     );
     return;
   }
@@ -57,7 +60,7 @@ export function handleSendMessage(ws: WebSocket, message: WSMessage) {
           text,
           senderId: connection.userId,
         },
-      })
+      }),
     );
   });
 }

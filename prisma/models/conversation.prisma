@@ -1,0 +1,27 @@
+model Conversation {
+  id            String           @id @default(uuid())
+  type          ConversationType
+  lastMessageId String?          @unique
+  updatedAt     DateTime         @updatedAt
+  createdAt     DateTime         @default(now())
+
+  // Relations
+  lastMessage Message? @relation("lastMessageId", fields: [lastMessageId], references: [id])
+
+  //just for completing prisma graph
+  messages                Message[]                @relation("conversationMessages")
+  conversationParticipant ConversationParticipant?
+
+  @@index([updatedAt])
+  @@map("Conversation")
+}
+
+enum ConversationType {
+  direct
+  group
+}
+
+enum ParticipantRole {
+  admin
+  member
+}

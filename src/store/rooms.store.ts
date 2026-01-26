@@ -9,6 +9,7 @@ const rooms: Map<string, Set<WebSocket>> = new Map();
 // add user to room
 export function joinRoom(roomId: string, ws: WebSocket) {
   if (!rooms.has(roomId)) {
+    // TODO: throw new Error("Room does not exist");
     rooms.set(roomId, new Set());
   }
   rooms.get(roomId)!.add(ws);
