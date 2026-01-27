@@ -1,13 +1,32 @@
+import { UserRepo } from "./user.repo.ts";
 import type { CreateUserBody } from "./user.schema.ts";
 
-export const createUser = ({ name, phone }: CreateUserBody) => {
-  console.log(name, phone);
-  console.log("create user serive is called");
-  return Promise.resolve({ name, phone });
+export const UserService = {
+  async createUser(input: CreateUserBody) {
+    const { phone } = input;
+
+    const user = await UserRepo.createUser({
+      name: phone, // initially
+      phone,
+    });
+
+    return user;
+  },
+
+  async getUserById(id: string) {
+    return await UserRepo.getUserById(id);
+  },
+
+  async getUserByPhone(phone: string) {
+    return await UserRepo.getUserByPhone(phone);
+  },
+
+  // TODO : we have to add the update user service
+  updateUser(id: string, input: Partial<CreateUserBody>) {
+    return UserRepo.updateUser(id, input);
+  },
+
+  deleteUser(id: string) {
+    return UserRepo.deleteUser(id);
+  },
 };
-
-const getUser = () => {};
-
-const updateUser = () => {};
-
-const deleteUser = () => {};

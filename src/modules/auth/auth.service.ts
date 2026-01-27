@@ -1,8 +1,7 @@
-import { randomUUID } from "crypto";
 import { hashOTP } from "../../utils/bcrypt.ts";
 import { signJwt } from "../../utils/jwt.ts";
 import { deleteOtp, getOtp, saveOtp } from "../../store/otp.store.ts";
-import { createUser, findUserByPhone } from "../../store/user.store.ts";
+import { UserService } from "../user/user.service.ts";
 
 export async function requestOtp(phone: string) {
   if (!phone) throw new Error("Invalid phone number");
@@ -40,29 +39,41 @@ export async function verifyOtp({
 
   const { otpHash, uniqueSalt, attempts, expiresAt } = record;
 
-  if (Date.now() > expiresAt) throw new Error("OTP expired");
+  if (Date.now() > expiresAt) {
+    deleteOtp(phone);
+    throw new Error("OTP expired");
+  }
 
   record.attempts++;
 
-  if (attempts > 5) throw new Error("Too many attempts");
+  if (attempts > 5) {
+    deleteOtp(phone);
+    throw new Error("Too many attempts");
+  }
 
   const { generatedHash } = await hashOTP(otp, uniqueSalt);
 
   if (generatedHash !== otpHash) throw new Error("Invalid OTP");
 
+  // delete the otp record
   deleteOtp(phone);
 
-  let userDetails = findUserByPhone(phone);
+  let user = await UserService.getUserByPhone(phone);
 
-  if (!userDetails) {
-    userDetails = createUser({
-      userId: randomUUID(),
-      phone,
-      createdAt: Date.now(),
-    });
+  let isNewUser = false;
+
+  if (!user) {
+    user = await UserService.createUser({ phone });
+    isNewUser = true;
   }
 
-  const accessToken = signJwt({ sub: userDetails.userId });
+  const accessToken = signJwt({
+    sub: user.id,
+  });
 
-  return { accessToken, userDetails };
+  return {
+    user,
+    isNewUser,
+    accessToken,
+  };
 }

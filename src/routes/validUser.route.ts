@@ -1,11 +1,11 @@
 import { Router } from "express";
+import type { TypedController } from "../middlewares/validation/typed.controller.ts";
 
 const router = Router();
 
-router.get("/", (req, res) => {
+const validateUser: TypedController<{}> = async (_, res) => {
   try {
-    //@ts-ignore
-    const { user } = req;
+    const { user } = res.locals;
 
     if (!user) throw new Error("User not found");
 
@@ -18,6 +18,8 @@ router.get("/", (req, res) => {
       error: "Invalid user",
     });
   }
-});
+};
+
+router.get("/", validateUser);
 
 export default router;
