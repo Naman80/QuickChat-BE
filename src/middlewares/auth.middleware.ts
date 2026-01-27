@@ -1,23 +1,32 @@
 import type { Request, Response, NextFunction } from "express";
+import type { AuthUser } from "../types/auth.types.ts";
 import { verifyJwt } from "../utils/jwt.ts";
 
 export function authMiddleware(
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token)
+  const authHeader = res.req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.split(" ")[1]
+    : null;
+
+  if (!token) {
     return res.status(401).json({
       error: "User token not found",
     });
+  }
 
   try {
-    //@ts-ignore // TODO: add user to req globally
-    req.user = verifyJwt(token);
+    const user = verifyJwt(token) as AuthUser;
+
+    // attach authenticated user to request context
+    res.locals.user = user;
+
     next();
   } catch {
-    res.status(401).json({
+    return res.status(401).json({
       error: "Invalid user token",
     });
   }

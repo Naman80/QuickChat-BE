@@ -2,7 +2,7 @@ import { Router } from "express";
 
 const router = Router();
 
-router.get("/valid-user", (req, res) => {
+router.get("/", (req, res) => {
   try {
     //@ts-ignore
     const { user } = req;

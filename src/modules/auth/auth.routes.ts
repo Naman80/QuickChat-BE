@@ -3,7 +3,7 @@ import { requestOtpHandler, verifyOtpHandler } from "./auth.controller.ts";
 
 const router = Router();
 
-router.post("/auth/request-otp", requestOtpHandler);
-router.post("/auth/verify-otp", verifyOtpHandler);
+router.post("/request-otp", requestOtpHandler);
+router.post("/verify-otp", verifyOtpHandler);
 
 export default router;
