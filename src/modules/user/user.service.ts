@@ -2,9 +2,7 @@ import { UserRepo } from "./user.repo.ts";
 import type { CreateUserBody } from "./user.schema.ts";
 
 export const UserService = {
-  async createUser(input: CreateUserBody) {
-    const { phone } = input;
-
+  async createUser({ phone }: CreateUserBody) {
     const user = await UserRepo.createUser({
       name: phone, // initially
       phone,
