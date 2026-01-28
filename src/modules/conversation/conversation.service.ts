@@ -1,10 +1,11 @@
-import { ConversationRepo } from "./conversation.repo.ts";
+import { ConversationType } from "../../../generated/prisma/enums.ts";
 import type { CreateConversationBody } from "./conversation.schema.ts";
+import { ConversationRepo } from "./repositories/conversation.repo.ts";
 
 export const ConversationService = {
   async createConversation({ type }: CreateConversationBody) {
     const conversation = await ConversationRepo.createConversation({
-      type,
+      data: { type: ConversationType.direct },
     });
 
     return conversation;

@@ -19,10 +19,13 @@ export function authMiddleware(
   }
 
   try {
-    const user = verifyJwt(token) as AuthUser;
+    const user = verifyJwt(token);
+
+    const authUser: AuthUser = { id: user.sub as string };
 
     // attach authenticated user to request context
-    res.locals.user = user;
+
+    res.locals.user = authUser;
 
     next();
   } catch {

@@ -1,18 +1,18 @@
 model ConversationParticipant {
-  conversationId    String          @unique
+  conversationId    String
   userId            String          @unique
   role              ParticipantRole
   lastReadMessageId String?         @unique
   unreadCount       Int             @default(0)
   joinedAt          DateTime        @default(now())
-  leftAt            DateTime?
 
   // Relations
   user            User         @relation(fields: [userId], references: [id])
-  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  conversation    Conversation @relation("conversationId", fields: [conversationId], references: [id])
   lastReadMessage Message?     @relation("participantLastReadMessaage", fields: [lastReadMessageId], references: [id])
 
   @@id([conversationId, userId])
+  @@index([conversationId])
   @@index([userId])
   @@map("ConversationParticipant")
 }

@@ -10,5 +10,6 @@ model MessageUserState {
 
   @@id([messageId, userId])
   @@index([userId])
+  @@index([messageId])
   @@map("MessageUserState")
 }

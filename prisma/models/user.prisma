@@ -9,5 +9,7 @@ model User {
   conversationParticipant ConversationParticipant[]
   messageUserStates       MessageUserState[]
 
+  @@index([id])
+  @@index([phone])
   @@map("User")
 }
