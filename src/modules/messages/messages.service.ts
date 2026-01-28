@@ -21,6 +21,7 @@ export const MessageService = {
     // -----------------------------
     let receiverId: string | null = null;
     let conversationId: string | null = null;
+    let directKey: string | null = null;
 
     if (message.recipient_type === RecipientType.Individual) {
       // get receiver data
@@ -34,9 +35,10 @@ export const MessageService = {
       }
       receiverId = receiver.id;
 
+      directKey = ConversationUtils.generateDirectKey(senderId, receiverId);
+
       const conversation = await ConversationRepo.getConversationByDirectKey(
-        senderId,
-        receiverId,
+        directKey,
         { id: true },
       );
 
@@ -49,7 +51,17 @@ export const MessageService = {
       if (!conversation) {
         throw new Error("Conversation not found");
       }
+
       conversationId = conversation.id;
+
+      const isParticipant = await ParticipantRepo.getParticipant(
+        conversationId,
+        senderId,
+      );
+
+      if (!isParticipant) {
+        throw new Error("Sender is not a participant of this conversation");
+      }
     }
 
     // -----------------------------
@@ -57,39 +69,52 @@ export const MessageService = {
     // -----------------------------
     const result = await prisma.$transaction(async (tx) => {
       if (!conversationId) {
-        const directKey = ConversationUtils.generateDirectKey(
-          senderId,
-          receiverId!,
-        );
-
-        const conversation = await ConversationRepo.createConversation(
-          {
-            data: {
-              type: ConversationType.direct,
-              directKey,
+        // CASE : What if two user send new message to each other at the same time - use try/catch
+        // Create conversation
+        try {
+          const conversation = await ConversationRepo.createConversation(
+            {
+              data: {
+                directKey,
+                type: ConversationType.direct,
+              },
+              select: { id: true },
             },
-            select: { id: true },
-          },
-          tx,
-        );
+            tx,
+          );
+
+          conversationId = conversation.id;
+        } catch (err: any) {
+          // another request created it concurrently
+          const existingConversation =
+            await ConversationRepo.getConversationByDirectKey(
+              directKey!,
+              { id: true },
+              tx,
+            );
+
+          if (!existingConversation) {
+            throw new Error("Conversation not found while sending message");
+          }
+
+          conversationId = existingConversation.id;
+        }
 
         await ParticipantRepo.createMany(
           [
             {
-              conversationId: conversation.id,
+              conversationId,
               userId: senderId,
               role: ParticipantRole.member,
             },
             {
-              conversationId: conversation.id,
+              conversationId,
               userId: receiverId!,
               role: ParticipantRole.member,
             },
           ],
           tx,
         );
-
-        conversationId = conversation.id;
       }
 
       const createNewMessage = MessageRepo.createMessage(tx, {
@@ -150,7 +175,7 @@ export const MessageService = {
         updatingConversationLastMessage,
       ]);
 
-      return { message, participants };
+      return { message: newMessage, participants };
     });
 
     console.timeEnd("sendMessageTime");

@@ -6,6 +6,15 @@ import type {
 import { prisma } from "../../../db/prisma.ts";
 
 export const ParticipantRepo = {
+  async getParticipants(conversationId: string, tx?: TransactionClient) {
+    const db = tx || prisma;
+    return db.conversationParticipant.findMany({
+      where: {
+        conversationId,
+      },
+    });
+  },
+
   async getParticipant(
     conversationId: string,
     userId: string,
@@ -45,15 +54,7 @@ export const ParticipantRepo = {
     const db = tx || prisma;
     return db.conversationParticipant.createMany({
       data,
-    });
-  },
-
-  async getParticipants(conversationId: string, tx?: TransactionClient) {
-    const db = tx || prisma;
-    return db.conversationParticipant.findMany({
-      where: {
-        conversationId,
-      },
+      skipDuplicates: true,
     });
   },
 

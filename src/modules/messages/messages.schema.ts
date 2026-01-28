@@ -5,17 +5,17 @@ export const RecipientType = {
   Individual: "individual",
   Group: "group",
 } as const;
+export type RecipientType = (typeof RecipientType)[keyof typeof RecipientType];
 
 export const recipientTypeSchema = createEnumSchema(RecipientType);
-export type RecipientType = (typeof RecipientType)[keyof typeof RecipientType];
 
 export const MessageType = {
   Text: "text",
+  Image: "image",
 } as const;
+export type MessageType = (typeof MessageType)[keyof typeof MessageType];
 
 export const messageTypeSchema = createEnumSchema(MessageType);
-
-export type MessageType = (typeof MessageType)[keyof typeof MessageType];
 
 export const sendMessageBodySchema = z.object({
   // TODO: enum

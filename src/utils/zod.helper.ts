@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-export function createEnumSchema<T extends Record<string, string>>(
-  constObj: T,
-) {
-  const values = Object.values(constObj) as [string, ...string[]]; // helps TS understand it's non-empty
-  return z.enum(values);
+export function createEnumSchema<T extends Record<string, string>>(obj: T) {
+  return z.enum(Object.values(obj) as [T[keyof T], ...T[keyof T][]]);
 }

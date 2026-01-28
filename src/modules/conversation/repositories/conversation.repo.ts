@@ -5,7 +5,6 @@ import type {
 } from "../../../../generated/prisma/internal/prismaNamespace.ts";
 import type { ConversationUpdateInput } from "../../../../generated/prisma/models.ts";
 import { prisma } from "../../../db/prisma.ts";
-import { ConversationUtils } from "../conversation.utils.ts";
 
 export const ConversationRepo = {
   createConversation(data: ConversationCreateArgs, tx?: TransactionClient) {
@@ -21,13 +20,12 @@ export const ConversationRepo = {
   },
 
   getConversationByDirectKey(
-    senderId: string,
-    receiverId: string,
+    directKey: string,
     select?: ConversationSelect,
+    tx?: TransactionClient,
   ) {
-    const directKey = ConversationUtils.generateDirectKey(senderId, receiverId);
-
-    return prisma.conversation.findUnique({
+    const db = tx || prisma;
+    return db.conversation.findUnique({
       where: { directKey },
       select: select ?? null,
     });
