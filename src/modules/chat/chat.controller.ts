@@ -1,22 +1,24 @@
 import { WebSocket, type RawData } from "ws";
-import { WsEvents, type TWsMessage } from "../../websocket/ws.types.ts";
-import { validateWsMessage } from "../../websocket/ws.validation.ts";
 import { ChatService } from "./chat.service.ts";
+import type { TWsInboundMessage } from "../../websocket/schemas/ws.inboundMessages.schema.ts";
+import { validateWsInboundMessage } from "../../websocket/ws.validation.ts";
+import { WsInboundEvents, WsOutboundEvents } from "../../websocket/ws.types.ts";
+import { WebsocketUtils } from "../../websocket/ws.utils.ts";
 
 // Chat Controller is for Real-time communication handling.
 // To handle conversations data, please look at conversation.controller.ts
 export function handleChatMessage(ws: WebSocket, rawData: RawData) {
-  let message: TWsMessage;
+  let message: TWsInboundMessage;
 
   try {
-    message = validateWsMessage(rawData);
+    message = validateWsInboundMessage(rawData);
     console.log("WS Validated Message: ", message);
     switch (message.type) {
-      case WsEvents.JOIN_ROOM:
+      case WsInboundEvents.JOIN_ROOM:
         ChatService.handleJoinRoom({ ws, message });
         break;
 
-      case WsEvents.SEND_MESSAGE:
+      case WsInboundEvents.SEND_MESSAGE:
         ChatService.handleSendMessage({ ws, message });
         break;
 
@@ -24,13 +26,13 @@ export function handleChatMessage(ws: WebSocket, rawData: RawData) {
         throw new Error("Unknown message type");
     }
   } catch (err: any) {
-    ws.send(
-      JSON.stringify({
-        type: WsEvents.ERROR,
-        payload: err.message ?? "Invalid message",
-      }),
-    );
+    WebsocketUtils.sendMessage(ws, {
+      type: WsOutboundEvents.ERROR,
+      payload: {
+        message: err?.message ?? "Error in WS message",
+      },
+    });
 
-    console.error("Error in WS message", err.message);
+    console.error("Error in WS message: " + err + "\n" + err.message);
   }
 }

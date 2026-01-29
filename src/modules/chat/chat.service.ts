@@ -1,16 +1,18 @@
 import { type WebSocket } from "ws";
-import {
-  WsEvents,
-  type TWsJoinRoom,
-  type TWsSendMessage,
-} from "../../websocket/ws.types.ts";
+import { WsOutboundEvents } from "../../websocket/ws.types.ts";
 import { WsRoomStore } from "../../store/rooms.store.ts";
 import { WsConnectionStore } from "../../store/connection.store.ts";
 import { MessageService } from "../messages/messages.service.ts";
 import {
+  type TSendMessageBody,
   RecipientType,
-  TSendMessageBody,
 } from "../messages/schemas/messages.schema.ts";
+import type {
+  TWsJoinRoom,
+  TWsSendMessage,
+} from "../../websocket/schemas/ws.inboundMessages.schema.ts";
+import type { TWsNewMessage } from "../../websocket/schemas/ws.outboundMessages.schema.ts";
+import { WebsocketUtils } from "../../websocket/ws.utils.ts";
 
 interface IHandleJoinRoom {
   ws: WebSocket;
@@ -57,12 +59,10 @@ export const ChatService = {
 
     WsRoomStore.joinRoom(conversationId, ws);
 
-    ws.send(
-      JSON.stringify({
-        type: WsEvents.USER_JOINED,
-        payload: { conversationId },
-      }),
-    );
+    WebsocketUtils.sendMessage(ws, {
+      type: WsOutboundEvents.USER_JOINED,
+      payload: { conversationId },
+    });
   },
 
   async handleSendMessage({ ws, message }: IHandleSendMessage) {
@@ -83,32 +83,33 @@ export const ChatService = {
     WsRoomStore.joinRoom(conversationId, ws);
 
     // 3. ACK to sender (optional but recommended)
-    ws.send(
-      JSON.stringify({
-        type: WsEvents.MESSAGE_SENT,
-        payload: {
-          conversationId,
-          message: newMessage,
-        },
-      }),
-    );
+
+    WebsocketUtils.sendMessage(ws, {
+      type: WsOutboundEvents.MESSAGE_ACK,
+      payload: {
+        conversationId,
+        message: newMessage,
+      },
+    });
 
     // 4. Fan-out to all participants (user-based)
+    const newMessageData: TWsNewMessage = {
+      type: WsOutboundEvents.NEW_MESSAGE,
+      payload: { conversationId, message: newMessage },
+    };
+
+    const sockets = new Set<WebSocket>(); // get all unique sockets
+
     for (const userId of participants) {
       if (userId === senderId) continue;
+      WsConnectionStore.getSocketsByUserId(userId).forEach((s) =>
+        sockets.add(s),
+      );
+    }
 
-      const sockets = WsConnectionStore.getSocketsByUserId(userId);
-
-      for (const socket of sockets) {
-        socket.send(
-          JSON.stringify({
-            type: WsEvents.NEW_MESSAGE,
-            payload: {
-              conversationId,
-              message: newMessage,
-            },
-          }),
-        );
+    for (const socket of sockets) {
+      if (socket.readyState === socket.OPEN) {
+        WebsocketUtils.sendMessage(socket, newMessageData);
       }
     }
   },

@@ -1,8 +1,15 @@
 import type { RawData } from "ws";
-import { WsMessageSchema } from "./ws.types.ts";
+import { ZodType } from "zod";
+import {
+  type TWsInboundMessage,
+  WsInboundMessageSchema,
+} from "./schemas/ws.inboundMessages.schema.ts";
+import {
+  type TWsOutboundMessage,
+  WsOutboundMessageSchema,
+} from "./schemas/ws.outboundMessages.schema.ts";
 
-export function validateWsMessage(rawData: RawData) {
-  // 1. parse JSON
+function validateWsMessage(rawData: RawData, schema: ZodType) {
   const parsed =
     typeof rawData === "string"
       ? JSON.parse(rawData)
@@ -10,7 +17,24 @@ export function validateWsMessage(rawData: RawData) {
         ? JSON.parse(rawData.toString("utf-8"))
         : rawData;
 
-  const payloadSchema = WsMessageSchema.parse(parsed);
+  const payloadSchema = schema.parse(parsed);
 
+  return payloadSchema;
+}
+
+export function validateWsInboundMessage(rawData: RawData) {
+  const payloadSchema = validateWsMessage(
+    rawData,
+    WsInboundMessageSchema,
+  ) as TWsInboundMessage;
+
+  return payloadSchema;
+}
+
+export function validateWsOutboundMessage(rawData: RawData) {
+  const payloadSchema = validateWsMessage(
+    rawData,
+    WsOutboundMessageSchema,
+  ) as TWsOutboundMessage;
   return payloadSchema;
 }
