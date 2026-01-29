@@ -3,7 +3,7 @@ import { ChatService } from "./chat.service.ts";
 import type { TWsInboundMessage } from "../../websocket/schemas/ws.inboundMessages.schema.ts";
 import { validateWsInboundMessage } from "../../websocket/ws.validation.ts";
 import { WsInboundEvents, WsOutboundEvents } from "../../websocket/ws.types.ts";
-import { WebsocketUtils } from "../../websocket/ws.utils.ts";
+import { WebsocketUtils } from "../../websocket/ws.util.ts";
 
 // Chat Controller is for Real-time communication handling.
 // To handle conversations data, please look at conversation.controller.ts

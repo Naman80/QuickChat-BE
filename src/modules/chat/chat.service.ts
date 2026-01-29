@@ -12,7 +12,7 @@ import type {
   TWsSendMessage,
 } from "../../websocket/schemas/ws.inboundMessages.schema.ts";
 import type { TWsNewMessage } from "../../websocket/schemas/ws.outboundMessages.schema.ts";
-import { WebsocketUtils } from "../../websocket/ws.utils.ts";
+import { WebsocketUtils } from "../../websocket/ws.util.ts";
 
 interface IHandleJoinRoom {
   ws: WebSocket;
