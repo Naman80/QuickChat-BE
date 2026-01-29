@@ -1,8 +1,8 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { handleChatMessage } from "../modules/chat/chat.controller.ts";
-import { authenticateWs } from "./ws.auth.ts";
 import { WsConnectionStore } from "../store/connection.store.ts";
 import { WsRoomStore } from "../store/rooms.store.ts";
+import type { AuthUser } from "../types/auth.types.ts";
 
 export function handleCloseConnection(ws: WebSocket) {
   // then perform further operations on it.
@@ -11,8 +11,6 @@ export function handleCloseConnection(ws: WebSocket) {
 
   // remove connections
   WsConnectionStore.removeConnection(ws); // second : deleting entire ws related data
-
-  ws.close(); // TODO: THIS CAN GIVE ERROR IF WS IS ALREADY CLOSED
 
   console.log("WS connection closed");
 }
@@ -27,7 +25,7 @@ export function handleConnection(
 
   try {
     // this is not correct blocker for ws request to connect // TODO : fix this
-    const { id: userId } = authenticateWs(req);
+    const { id: userId } = req.user as AuthUser;
 
     // managing ws connections - custom logic
     WsConnectionStore.registerConnection(ws, userId);

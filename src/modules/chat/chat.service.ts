@@ -1,4 +1,5 @@
 import { type WebSocket } from "ws";
+import { WebsocketUtils } from "../../websocket/ws.util.ts";
 import { WsOutboundEvents } from "../../websocket/ws.types.ts";
 import { WsRoomStore } from "../../store/rooms.store.ts";
 import { WsConnectionStore } from "../../store/connection.store.ts";
@@ -12,7 +13,6 @@ import type {
   TWsSendMessage,
 } from "../../websocket/schemas/ws.inboundMessages.schema.ts";
 import type { TWsNewMessage } from "../../websocket/schemas/ws.outboundMessages.schema.ts";
-import { WebsocketUtils } from "../../websocket/ws.util.ts";
 
 interface IHandleJoinRoom {
   ws: WebSocket;
@@ -45,6 +45,7 @@ function mapWsToSendMessageBody({ payload }: TWsSendMessage): TSendMessageBody {
 }
 
 export const ChatService = {
+  // Handle real-time room joining
   handleJoinRoom({ ws, message }: IHandleJoinRoom) {
     const userId = WsConnectionStore.getUserId(ws);
 
@@ -65,6 +66,7 @@ export const ChatService = {
     });
   },
 
+  // Handle real-time message sending
   async handleSendMessage({ ws, message }: IHandleSendMessage) {
     const senderId = WsConnectionStore.getUserId(ws);
 
@@ -82,8 +84,7 @@ export const ChatService = {
     // 2. Ensure sender socket is in the room (chat is open)
     WsRoomStore.joinRoom(conversationId, ws);
 
-    // 3. ACK to sender (optional but recommended)
-
+    // 3. ACK to sender
     WebsocketUtils.sendMessage(ws, {
       type: WsOutboundEvents.MESSAGE_ACK,
       payload: {
@@ -92,7 +93,7 @@ export const ChatService = {
       },
     });
 
-    // 4. Fan-out to all participants (user-based)
+    // 4. Fan-out to all participants
     const newMessageData: TWsNewMessage = {
       type: WsOutboundEvents.NEW_MESSAGE,
       payload: { conversationId, message: newMessage },

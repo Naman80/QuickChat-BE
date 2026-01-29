@@ -1,7 +1,7 @@
 import { hashOTP } from "../../utils/bcrypt.ts";
 import { signJwt } from "../../utils/jwt.ts";
-import { OtpStore } from "../../store/otp.store.ts";
 import { UserService } from "../user/user.service.ts";
+import { type TOtpRecord, OtpStore } from "../../store/otp.store.ts";
 
 export async function requestOtp(phone: string) {
   if (!phone) throw new Error("Invalid phone number");
@@ -10,8 +10,7 @@ export async function requestOtp(phone: string) {
 
   const { generatedHash, uniqueSalt } = await hashOTP(otp);
 
-  const record = {
-    phone,
+  const record: TOtpRecord = {
     otpHash: generatedHash,
     uniqueSalt,
     expiresAt: Date.now() + 2 * 60 * 1000, // 2 mints
@@ -20,7 +19,7 @@ export async function requestOtp(phone: string) {
 
   console.log(record);
 
-  OtpStore.saveOtp(record);
+  OtpStore.saveOtp(phone, record);
 }
 
 export async function verifyOtp({

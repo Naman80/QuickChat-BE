@@ -20,9 +20,9 @@ const WsNewMessageSchema = z.object({
   }),
 });
 
-// ================= MESSAGE ACK =========================
-
 export type TWsNewMessage = z.infer<typeof WsNewMessageSchema>;
+
+// ================= MESSAGE ACK =========================
 
 const WsMessageAckSchema = z.object({
   type: z.literal(WsOutboundEvents.MESSAGE_ACK),

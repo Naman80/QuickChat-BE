@@ -1,16 +1,15 @@
-interface OtpRecord {
-  phone: string;
+export type TOtpRecord = {
   otpHash: string;
   uniqueSalt: string;
   expiresAt: number;
   attempts: number;
-}
+};
 
-const otpStore = new Map<string, OtpRecord>();
+const otpStore = new Map<string, TOtpRecord>();
 
 export const OtpStore = {
-  saveOtp(record: OtpRecord) {
-    otpStore.set(record.phone, record);
+  saveOtp(phone: string, record: TOtpRecord) {
+    otpStore.set(phone, record);
   },
   getOtp(phone: string) {
     return otpStore.get(phone);

@@ -1,23 +1,13 @@
 import express from "express";
 import { createServer } from "http";
-import routes from "./routes/index.ts";
 import { initWebSocket } from "./websocket/index.ts";
+import routes from "./routes/index.ts";
 
 const app = express();
 
 app.use(routes);
 
 const httpServer = createServer(app);
-
-// this will handle all the upgrade requests
-httpServer.on("upgrade", (req, socket, head) => {
-  console.log(req.url);
-
-  console.log("connection upgrade req");
-
-  // we can destroy the connection here only if person is not authenticated.
-  // socket.destroy();
-});
 
 initWebSocket({ server: httpServer });
 

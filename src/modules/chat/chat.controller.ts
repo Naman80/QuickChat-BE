@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { WebSocket, type RawData } from "ws";
 import { ChatService } from "./chat.service.ts";
 import type { TWsInboundMessage } from "../../websocket/schemas/ws.inboundMessages.schema.ts";
@@ -12,7 +13,9 @@ export function handleChatMessage(ws: WebSocket, rawData: RawData) {
 
   try {
     message = validateWsInboundMessage(rawData);
+
     console.log("WS Validated Message: ", message);
+
     switch (message.type) {
       case WsInboundEvents.JOIN_ROOM:
         ChatService.handleJoinRoom({ ws, message });
@@ -29,10 +32,12 @@ export function handleChatMessage(ws: WebSocket, rawData: RawData) {
     WebsocketUtils.sendMessage(ws, {
       type: WsOutboundEvents.ERROR,
       payload: {
-        message: err?.message ?? "Error in WS message",
+        message:
+          z.prettifyError({ issues: [{ message: err.message }] }) ??
+          "Error in WS message",
       },
     });
 
-    console.error("Error in WS message: " + err + "\n" + err.message);
+    console.error("Error in WS message: " + err);
   }
 }
