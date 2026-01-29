@@ -11,8 +11,6 @@ export function initWebSocket({ server }: { server: Server }) {
   });
 
   wss.on("connection", (ws, req) => {
-    console.log("inside ws connection");
-
     handleConnection(ws, req, wss);
   });
 }

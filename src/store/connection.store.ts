@@ -1,43 +1,41 @@
-import { type WebSocket } from "ws";
+import type { WebSocket } from "ws";
 
-interface WsConnectionMeta {
-  userId: string | null;
-  rooms: Set<string>;
-}
+// socket -> userId
+const socketToUser = new Map<WebSocket, string>();
 
-const WsConnectionsData: Map<WebSocket, WsConnectionMeta> = new Map<
-  WebSocket,
-  WsConnectionMeta
->();
+// userId -> sockets
+const userToSockets = new Map<string, Set<WebSocket>>();
 
-export function registerWsConnection(ws: WebSocket, userId: string) {
-  const connectionDetails: WsConnectionMeta = {
-    userId,
-    rooms: new Set(),
-  };
+export const WsConnectionStore = {
+  registerConnection(ws: WebSocket, userId: string) {
+    socketToUser.set(ws, userId);
 
-  WsConnectionsData.set(ws, connectionDetails);
+    if (!userToSockets.has(userId)) {
+      userToSockets.set(userId, new Set());
+    }
+    userToSockets.get(userId)!.add(ws);
+  },
 
-  console.log(WsConnectionsData.size, "size");
-}
+  removeConnection(ws: WebSocket) {
+    const userId = socketToUser.get(ws);
+    if (!userId) return;
 
-export function removeWsConnection(ws: WebSocket) {
-  WsConnectionsData.delete(ws);
-}
+    socketToUser.delete(ws);
 
-export function getWsConnectionData(
-  ws: WebSocket
-): WsConnectionMeta | undefined {
-  // if present return | if not ??
-  return WsConnectionsData.get(ws);
-}
+    const sockets = userToSockets.get(userId);
+    if (!sockets) return;
 
-export function getAllWsConnectionData() {
-  return WsConnectionsData;
-}
+    sockets.delete(ws);
+    if (sockets.size === 0) {
+      userToSockets.delete(userId);
+    }
+  },
 
-export function joinConnectionRoom(roomId: string, ws: WebSocket) {
-  const wsConnectionData = getWsConnectionData(ws);
+  getUserId(ws: WebSocket): string | undefined {
+    return socketToUser.get(ws);
+  },
 
-  wsConnectionData?.rooms.add(roomId);
-}
+  getSocketsByUserId(userId: string): Set<WebSocket> {
+    return userToSockets.get(userId) ?? new Set();
+  },
+};

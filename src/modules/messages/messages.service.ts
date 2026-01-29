@@ -10,10 +10,15 @@ import { ParticipantRepo } from "../conversation/repositories/participants.repo.
 import { ConversationUtils } from "../conversation/conversation.utils.ts";
 import { MessageRepo } from "./repositories/messages.repo.ts";
 import { MessageUserStateRepo } from "./repositories/messageUserState.repo.ts";
-import { RecipientType, type SendMessageBody } from "./messages.schema.ts";
+import {
+  RecipientType,
+  type TSendMessageBody,
+} from "./schemas/messages.schema.ts";
+import { MessageType } from "./schemas/messageType.schema.ts";
 
 export const MessageService = {
-  async sendMessage(senderId: string, message: SendMessageBody) {
+  async sendMessage(senderId: string, messageBody: TSendMessageBody) {
+    const { recipient_type, to, message } = messageBody;
     console.time("sendMessageTime");
 
     // -----------------------------
@@ -23,9 +28,9 @@ export const MessageService = {
     let conversationId: string | null = null;
     let directKey: string | null = null;
 
-    if (message.recipient_type === RecipientType.Individual) {
+    if (recipient_type === RecipientType.Individual) {
       // get receiver data
-      const receiver = await UserRepo.getUserByPhone(message.to, { id: true });
+      const receiver = await UserRepo.getUserByPhone(to, { id: true });
 
       if (!receiver) {
         throw new Error("Receiver not found");
@@ -44,10 +49,10 @@ export const MessageService = {
 
       if (conversation) conversationId = conversation.id;
     } else {
-      const conversation = await ConversationRepo.getConversationById(
-        message.to,
-        { id: true },
-      );
+      const conversation = await ConversationRepo.getConversationById(to, {
+        id: true,
+      });
+
       if (!conversation) {
         throw new Error("Conversation not found");
       }
@@ -117,6 +122,11 @@ export const MessageService = {
         );
       }
 
+      // TODO : have to handle more message types in future
+      if (message.type !== MessageType.Text) {
+        throw new Error("Message type not supported");
+      }
+
       const createNewMessage = MessageRepo.createMessage(tx, {
         conversationId,
         senderId,
@@ -184,7 +194,7 @@ export const MessageService = {
     // Realtime fan-out (outside tx)
     // -----------------------------
     return {
-      conversationId,
+      conversationId: conversationId!,
       message: result.message,
       participants: result.participants.map((p) => p.userId),
     };

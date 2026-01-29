@@ -1,42 +1,36 @@
-import { WebSocket, WebSocketServer, type RawData } from "ws";
-import type { WSMessage } from "../../websocket/ws.types.ts";
-import { WS_EVENTS } from "../../websocket/ws.events.ts";
-import { handleJoinRoom, handleSendMessage } from "./chat.service.ts";
+import { WebSocket, type RawData } from "ws";
+import { WsEvents, type TWsMessage } from "../../websocket/ws.types.ts";
+import { validateWsMessage } from "../../websocket/ws.validation.ts";
+import { ChatService } from "./chat.service.ts";
 
 // Chat Controller is for Real-time communication handling.
-// To handle conversations api route please look at conversation.controller.ts
-
-export function handleChatMessage(
-  ws: WebSocket,
-  rawData: RawData,
-  wss: WebSocketServer,
-) {
-  let message: WSMessage;
+// To handle conversations data, please look at conversation.controller.ts
+export function handleChatMessage(ws: WebSocket, rawData: RawData) {
+  let message: TWsMessage;
 
   try {
-    message = JSON.parse(rawData.toString());
-  } catch {
-    ws.send(JSON.stringify({ type: WS_EVENTS.ERROR, payload: "Invalid JSON" }));
-    return;
-  }
+    message = validateWsMessage(rawData);
+    console.log("WS Validated Message: ", message);
+    switch (message.type) {
+      case WsEvents.JOIN_ROOM:
+        ChatService.handleJoinRoom({ ws, message });
+        break;
 
-  console.log(message, "this is data message");
+      case WsEvents.SEND_MESSAGE:
+        ChatService.handleSendMessage({ ws, message });
+        break;
 
-  switch (message.type) {
-    case WS_EVENTS.JOIN_ROOM:
-      handleJoinRoom(ws, message);
-      break;
+      default:
+        throw new Error("Unknown message type");
+    }
+  } catch (err: any) {
+    ws.send(
+      JSON.stringify({
+        type: WsEvents.ERROR,
+        payload: err.message ?? "Invalid message",
+      }),
+    );
 
-    case WS_EVENTS.SEND_MESSAGE:
-      handleSendMessage(ws, message);
-      break;
-
-    default:
-      ws.send(
-        JSON.stringify({
-          type: WS_EVENTS.ERROR,
-          payload: "Unknown message type",
-        }),
-      );
+    console.error("Error in WS message", err.message);
   }
 }

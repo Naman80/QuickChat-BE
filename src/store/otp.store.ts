@@ -8,15 +8,16 @@ interface OtpRecord {
 
 const otpStore = new Map<string, OtpRecord>();
 
-export function saveOtp(record: OtpRecord) {
-  otpStore.set(record.phone, record);
-}
+export const OtpStore = {
+  saveOtp(record: OtpRecord) {
+    otpStore.set(record.phone, record);
+  },
+  getOtp(phone: string) {
+    return otpStore.get(phone);
+  },
 
-export function getOtp(phone: string) {
-  return otpStore.get(phone);
-}
-
-export function deleteOtp(phone: string) {
-  console.log(otpStore);
-  otpStore.delete(phone);
-}
+  deleteOtp(phone: string) {
+    console.log(otpStore);
+    otpStore.delete(phone);
+  },
+};

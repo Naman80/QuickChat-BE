@@ -1,11 +1,21 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { handleChatMessage } from "../modules/chat/chat.controller.ts";
-import {
-  registerWsConnection,
-  removeWsConnection,
-} from "../store/connection.store.ts";
-import { removeClientFromRooms } from "../store/rooms.store.ts";
 import { authenticateWs } from "./ws.auth.ts";
+import { WsConnectionStore } from "../store/connection.store.ts";
+import { WsRoomStore } from "../store/rooms.store.ts";
+
+export function handleCloseConnection(ws: WebSocket) {
+  // then perform further operations on it.
+  // remove ws from all rooms
+  WsRoomStore.removeSocketFromAllRooms(ws); // first cuz we want to get all the rooms
+
+  // remove connections
+  WsConnectionStore.removeConnection(ws); // second : deleting entire ws related data
+
+  ws.close(); // TODO: THIS CAN GIVE ERROR IF WS IS ALREADY CLOSED
+
+  console.log("WS connection closed");
+}
 
 export function handleConnection(
   ws: WebSocket,
@@ -16,33 +26,19 @@ export function handleConnection(
   console.log("Number of ws clients connected", wss.clients.size);
 
   try {
-    // this is not coorect blocker for ws request to connect // TODO : fix this
-    const userId = authenticateWs(req);
+    // this is not correct blocker for ws request to connect // TODO : fix this
+    const { id: userId } = authenticateWs(req);
 
     // managing ws connections - custom logic
-    registerWsConnection(ws, userId);
+    WsConnectionStore.registerConnection(ws, userId);
 
     ws.on("message", (data) => {
-      handleChatMessage(ws, data, wss);
+      handleChatMessage(ws, data);
     });
 
-    ws.on("close", () => {
-      // close that connection here only first thing
-      ws.close();
-      // then perform further operations on it.
-
-      // remove ws from all rooms
-      removeClientFromRooms(ws); // first cuz we want to get all the rooms
-
-      // remove connections
-      removeWsConnection(ws); // second : deleting entire ws related data
-
-      console.log("WS connection closed");
-    });
+    ws.on("close", handleCloseConnection);
   } catch (e: any) {
-    console.log("error ", e.message);
-    console.log("WS connection closed");
-
-    ws.close();
+    handleCloseConnection(ws);
+    console.error("Error in WS connection", e.message);
   }
 }

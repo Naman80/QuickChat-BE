@@ -1,66 +1,115 @@
-// controller will send message type here
 import { type WebSocket } from "ws";
 import {
-  getWsConnectionData,
-  joinConnectionRoom,
-} from "../../store/connection.store.ts";
-import { getRoomClients, joinRoom } from "../../store/rooms.store.ts";
-import type { WSMessage } from "../../websocket/ws.types.ts";
-import { WS_EVENTS } from "../../websocket/ws.events.ts";
+  WsEvents,
+  type TWsJoinRoom,
+  type TWsSendMessage,
+} from "../../websocket/ws.types.ts";
+import { WsRoomStore } from "../../store/rooms.store.ts";
+import { WsConnectionStore } from "../../store/connection.store.ts";
+import { MessageService } from "../messages/messages.service.ts";
+import {
+  RecipientType,
+  TSendMessageBody,
+} from "../messages/schemas/messages.schema.ts";
 
-// room handling functions
-
-export function handleJoinRoom(ws: WebSocket, message: WSMessage) {
-  const { roomId } = message.payload;
-  const connection = getWsConnectionData(ws);
-  console.log(connection);
-
-  if (!connection) return;
-
-  // this should be in transaction
-
-  // join the room
-  joinRoom(roomId, ws);
-
-  // this handling should not be here
-  joinConnectionRoom(roomId, ws);
-
-  // you joined this room.
-  ws.send(
-    JSON.stringify({
-      type: WS_EVENTS.USER_JOINED,
-      payload: { roomId },
-    }),
-  );
+interface IHandleJoinRoom {
+  ws: WebSocket;
+  message: TWsJoinRoom;
 }
 
-export function handleSendMessage(ws: WebSocket, message: WSMessage) {
-  const { roomId, text } = message.payload;
+interface IHandleSendMessage {
+  ws: WebSocket;
+  message: TWsSendMessage;
+}
 
-  const connection = getWsConnectionData(ws);
+function mapWsToSendMessageBody({ payload }: TWsSendMessage): TSendMessageBody {
+  const bastSendMessageBody = {
+    message: payload.message,
+  };
 
-  if (!connection || !connection.rooms.has(roomId)) {
-    ws.send(
-      JSON.stringify({
-        type: WS_EVENTS.ERROR,
-        payload: "Not part of room",
-      }),
-    );
-    return;
+  if ("to" in payload) {
+    return {
+      ...bastSendMessageBody,
+      recipient_type: RecipientType.Individual,
+      to: payload.to,
+    };
   }
 
-  const clients = getRoomClients(roomId);
+  return {
+    ...bastSendMessageBody,
+    recipient_type: RecipientType.Group,
+    to: payload.conversationId,
+  };
+}
 
-  clients.forEach((client) => {
-    client.send(
+export const ChatService = {
+  handleJoinRoom({ ws, message }: IHandleJoinRoom) {
+    const userId = WsConnectionStore.getUserId(ws);
+
+    if (!userId) {
+      throw new Error("Join room failed: user not found");
+    }
+
+    const { conversationId } = message.payload;
+
+    // OPTIONAL (recommended): validate membership via service
+    // ConversationService.assertParticipant(userId, roomId);
+
+    WsRoomStore.joinRoom(conversationId, ws);
+
+    ws.send(
       JSON.stringify({
-        type: WS_EVENTS.NEW_MESSAGE,
+        type: WsEvents.USER_JOINED,
+        payload: { conversationId },
+      }),
+    );
+  },
+
+  async handleSendMessage({ ws, message }: IHandleSendMessage) {
+    const senderId = WsConnectionStore.getUserId(ws);
+
+    if (!senderId) {
+      throw new Error("Send message failed: sender user not found");
+    }
+
+    const messageBody = mapWsToSendMessageBody(message);
+
+    // 1. Call domain service (source of truth)
+    const result = await MessageService.sendMessage(senderId, messageBody);
+
+    const { conversationId, message: newMessage, participants } = result;
+
+    // 2. Ensure sender socket is in the room (chat is open)
+    WsRoomStore.joinRoom(conversationId, ws);
+
+    // 3. ACK to sender (optional but recommended)
+    ws.send(
+      JSON.stringify({
+        type: WsEvents.MESSAGE_SENT,
         payload: {
-          roomId,
-          text,
-          senderId: connection.userId,
+          conversationId,
+          message: newMessage,
         },
       }),
     );
-  });
-}
+
+    // 4. Fan-out to all participants (user-based)
+    for (const userId of participants) {
+      if (userId === senderId) continue;
+
+      const sockets = WsConnectionStore.getSocketsByUserId(userId);
+
+      for (const socket of sockets) {
+        socket.send(
+          JSON.stringify({
+            type: WsEvents.NEW_MESSAGE,
+            payload: {
+              conversationId,
+              message: newMessage,
+            },
+          }),
+        );
+      }
+    }
+  },
+};

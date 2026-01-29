@@ -1,8 +1,8 @@
 import type { TypedController } from "../../middlewares/validation/typed.controller.ts";
-import type { SendMessageRequest } from "./messages.schema.ts";
+import type { TSendMessageRequest } from "./schemas/messages.schema.ts";
 import { MessageService } from "./messages.service.ts";
 
-export const sendMessage: TypedController<SendMessageRequest> = async (
+export const sendMessage: TypedController<TSendMessageRequest> = async (
   _req,
   res,
 ) => {

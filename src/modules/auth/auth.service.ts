@@ -1,6 +1,6 @@
 import { hashOTP } from "../../utils/bcrypt.ts";
 import { signJwt } from "../../utils/jwt.ts";
-import { deleteOtp, getOtp, saveOtp } from "../../store/otp.store.ts";
+import { OtpStore } from "../../store/otp.store.ts";
 import { UserService } from "../user/user.service.ts";
 
 export async function requestOtp(phone: string) {
@@ -20,7 +20,7 @@ export async function requestOtp(phone: string) {
 
   console.log(record);
 
-  saveOtp(record);
+  OtpStore.saveOtp(record);
 }
 
 export async function verifyOtp({
@@ -33,21 +33,21 @@ export async function verifyOtp({
   if (!phone) throw new Error("Invalid phone number");
   if (!otp) throw new Error("Please provide otp");
 
-  const record = getOtp(phone);
+  const record = OtpStore.getOtp(phone);
 
   if (!record) throw new Error("OTP not found");
 
   const { otpHash, uniqueSalt, attempts, expiresAt } = record;
 
   if (Date.now() > expiresAt) {
-    deleteOtp(phone);
+    OtpStore.deleteOtp(phone);
     throw new Error("OTP expired");
   }
 
   record.attempts++;
 
   if (attempts > 5) {
-    deleteOtp(phone);
+    OtpStore.deleteOtp(phone);
     throw new Error("Too many attempts");
   }
 
@@ -56,7 +56,7 @@ export async function verifyOtp({
   if (generatedHash !== otpHash) throw new Error("Invalid OTP");
 
   // delete the otp record
-  deleteOtp(phone);
+  OtpStore.deleteOtp(phone);
 
   let user = await UserService.getUserByPhone(phone);
 
