@@ -1,22 +1,14 @@
-import { MessageContentType } from "../../../../generated/prisma/enums.ts";
-import type { TransactionClient } from "../../../../generated/prisma/internal/prismaNamespace.ts";
+import { prisma } from "../../../db/prisma.ts";
+import type {
+  MessageUncheckedCreateInput,
+  TransactionClient,
+} from "../../../../generated/prisma/internal/prismaNamespace.ts";
 
 export const MessageRepo = {
-  createMessage(
-    tx: TransactionClient,
-    input: {
-      conversationId: string;
-      senderId: string;
-      content: string;
-    },
-  ) {
-    return tx.message.create({
-      data: {
-        conversationId: input.conversationId,
-        senderId: input.senderId,
-        content: input.content,
-        contentType: MessageContentType.text,
-      },
+  createMessage(data: MessageUncheckedCreateInput, tx?: TransactionClient) {
+    const db = tx || prisma;
+    return db.message.create({
+      data,
     });
   },
 };

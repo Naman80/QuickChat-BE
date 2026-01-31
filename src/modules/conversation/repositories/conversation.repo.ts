@@ -1,21 +1,28 @@
+import { prisma } from "../../../db/prisma.ts";
 import type {
-  ConversationCreateArgs,
+  ConversationCreateInput,
   ConversationSelect,
   TransactionClient,
 } from "../../../../generated/prisma/internal/prismaNamespace.ts";
 import type { ConversationUpdateInput } from "../../../../generated/prisma/models.ts";
-import { prisma } from "../../../db/prisma.ts";
 
 export const ConversationRepo = {
-  createConversation(data: ConversationCreateArgs, tx?: TransactionClient) {
+  createConversation(
+    data: ConversationCreateInput,
+    select?: ConversationSelect,
+    tx?: TransactionClient,
+  ) {
     const db = tx || prisma;
-    return db.conversation.create({ ...data });
+    return db.conversation.create({
+      data,
+      select: { ...(select ?? {}) },
+    });
   },
 
   getConversationById(id: string, select?: ConversationSelect) {
     return prisma.conversation.findUnique({
       where: { id },
-      select: select ?? null,
+      select: { ...(select ?? {}) },
     });
   },
 
@@ -25,9 +32,9 @@ export const ConversationRepo = {
     tx?: TransactionClient,
   ) {
     const db = tx || prisma;
-    return db.conversation.findUnique({
+    return db.conversation.findFirst({
       where: { directKey },
-      select: select ?? null,
+      select: { ...(select ?? {}) },
     });
   },
 

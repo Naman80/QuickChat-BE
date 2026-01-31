@@ -1,17 +1,23 @@
 import type { ParticipantRole } from "../../../../generated/prisma/enums.ts";
 import type {
   ConversationParticipantCreateManyInput,
+  ConversationParticipantSelect,
   TransactionClient,
 } from "../../../../generated/prisma/internal/prismaNamespace.ts";
 import { prisma } from "../../../db/prisma.ts";
 
 export const ParticipantRepo = {
-  async getParticipants(conversationId: string, tx?: TransactionClient) {
+  async getParticipants(
+    conversationId: string,
+    select?: ConversationParticipantSelect,
+    tx?: TransactionClient,
+  ) {
     const db = tx || prisma;
     return db.conversationParticipant.findMany({
       where: {
         conversationId,
       },
+      select: { ...(select ?? {}) },
     });
   },
 

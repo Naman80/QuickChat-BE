@@ -24,10 +24,9 @@ export function handleConnection(
   console.log("Number of ws clients connected", wss.clients.size);
 
   try {
-    // this is not correct blocker for ws request to connect // TODO : fix this
     const { id: userId } = req.user as AuthUser;
 
-    // managing ws connections - custom logic
+    // managing ws connections
     WsConnectionStore.registerConnection(ws, userId);
 
     ws.on("message", (data) => {

@@ -9,11 +9,11 @@ import { ConversationRepo } from "../conversation/repositories/conversation.repo
 import { ParticipantRepo } from "../conversation/repositories/participants.repo.ts";
 import { ConversationUtils } from "../conversation/conversation.utils.ts";
 import { MessageRepo } from "./repositories/messages.repo.ts";
-import { MessageUserStateRepo } from "./repositories/messageUserState.repo.ts";
 import {
   RecipientType,
   type TSendMessageBody,
 } from "./schemas/messages.schema.ts";
+import type { ConversationParticipant } from "../../../generated/prisma/client.ts";
 import { MessageType } from "./schemas/messageType.schema.ts";
 
 export const MessageService = {
@@ -27,6 +27,7 @@ export const MessageService = {
     let receiverId: string | null = null;
     let conversationId: string | null = null;
     let directKey: string | null = null;
+    let conversationParticipants: ConversationParticipant[] = [];
 
     if (recipient_type === RecipientType.Individual) {
       // get receiver data
@@ -44,29 +45,33 @@ export const MessageService = {
 
       const conversation = await ConversationRepo.getConversationByDirectKey(
         directKey,
-        { id: true },
+        { id: true, conversationParticipants: { select: { userId: true } } },
       );
 
-      if (conversation) conversationId = conversation.id;
+      if (conversation) {
+        conversationId = conversation.id;
+        conversationParticipants = conversation.conversationParticipants;
+      }
     } else {
       const conversation = await ConversationRepo.getConversationById(to, {
         id: true,
+        conversationParticipants: { select: { userId: true } },
       });
 
       if (!conversation) {
         throw new Error("Conversation not found");
       }
 
-      conversationId = conversation.id;
-
-      const isParticipant = await ParticipantRepo.getParticipant(
-        conversationId,
-        senderId,
+      const isParticipant = conversation.conversationParticipants.some(
+        (participant) => participant.userId === senderId,
       );
 
       if (!isParticipant) {
         throw new Error("Sender is not a participant of this conversation");
       }
+
+      conversationId = conversation.id;
+      conversationParticipants = conversation.conversationParticipants;
     }
 
     // -----------------------------
@@ -79,22 +84,43 @@ export const MessageService = {
         try {
           const conversation = await ConversationRepo.createConversation(
             {
-              data: {
-                directKey,
-                type: ConversationType.direct,
+              directKey,
+              type: ConversationType.direct,
+              conversationParticipants: {
+                createMany: {
+                  data: [
+                    {
+                      userId: senderId,
+                      role: ParticipantRole.member,
+                    },
+                    {
+                      userId: receiverId!,
+                      role: ParticipantRole.member,
+                    },
+                  ],
+                  skipDuplicates: true,
+                },
               },
-              select: { id: true },
+            },
+            {
+              id: true,
+              conversationParticipants: { select: { userId: true } },
             },
             tx,
           );
+          console.log(conversation, "this is new conversation CREATEAD");
 
           conversationId = conversation.id;
+          conversationParticipants = conversation.conversationParticipants;
         } catch (err: any) {
           // another request created it concurrently
           const existingConversation =
             await ConversationRepo.getConversationByDirectKey(
               directKey!,
-              { id: true },
+              {
+                id: true,
+                conversationParticipants: { select: { userId: true } },
+              },
               tx,
             );
 
@@ -103,23 +129,9 @@ export const MessageService = {
           }
 
           conversationId = existingConversation.id;
+          conversationParticipants =
+            existingConversation.conversationParticipants;
         }
-
-        await ParticipantRepo.createMany(
-          [
-            {
-              conversationId,
-              userId: senderId,
-              role: ParticipantRole.member,
-            },
-            {
-              conversationId,
-              userId: receiverId!,
-              role: ParticipantRole.member,
-            },
-          ],
-          tx,
-        );
       }
 
       // TODO : have to handle more message types in future
@@ -127,65 +139,45 @@ export const MessageService = {
         throw new Error("Message type not supported");
       }
 
-      const createNewMessage = MessageRepo.createMessage(tx, {
-        conversationId,
-        senderId,
-        content: message.text.body,
-      });
+      const newMessage = await MessageRepo.createMessage(
+        {
+          conversationId,
+          senderId,
+          contentType: message.type,
+          content: message.text.body,
+          messageUserStates: {
+            createMany: {
+              // creating message user states here only
+              data: conversationParticipants.map((p) => ({
+                userId: p.userId,
+                status:
+                  p.userId === senderId
+                    ? MessageStatus.read
+                    : MessageStatus.sent,
+              })),
+            },
+          },
+          participantLastReadMessage: {
+            // marking the senders last message
+            connect: { conversationId, userId: senderId, unreadCount: 0 },
+          },
 
-      const getParticipants = ParticipantRepo.getParticipants(
-        conversationId,
-        tx,
-      );
-
-      const [newMessage, participants] = await Promise.all([
-        createNewMessage,
-        getParticipants,
-      ]);
-
-      const messageUserStates = participants.map((p) => ({
-        messageId: newMessage.id,
-        userId: p.userId,
-        status: p.userId === senderId ? MessageStatus.read : MessageStatus.sent,
-      }));
-
-      // Create message user states
-      const createMessageUserStates = MessageUserStateRepo.createMany(
-        tx,
-        messageUserStates,
-      );
-
-      // Update senders last read message
-      const updatingSendersLastReadMessage = ParticipantRepo.markRead(
-        conversationId,
-        senderId,
-        newMessage.id,
+          lastMessage: {
+            // marking the last message of conversation
+            connect: { id: conversationId },
+          },
+        },
         tx,
       );
 
       // Increment unread count for all others
-      const updatingUnreadCounts = ParticipantRepo.incrementUnreadForOthers(
+      await ParticipantRepo.incrementUnreadForOthers(
         conversationId,
         senderId,
         tx,
       );
 
-      // Update conversation last message
-      const updatingConversationLastMessage =
-        ConversationRepo.updateConversationLastMessage(
-          conversationId,
-          newMessage.id,
-          tx,
-        );
-
-      await Promise.all([
-        createMessageUserStates,
-        updatingSendersLastReadMessage,
-        updatingUnreadCounts,
-        updatingConversationLastMessage,
-      ]);
-
-      return { message: newMessage, participants };
+      return { message: newMessage, participants: conversationParticipants };
     });
 
     console.timeEnd("sendMessageTime");

@@ -1,5 +1,9 @@
 import { MessageStatus } from "../../../../generated/prisma/enums.ts";
-import type { TransactionClient } from "../../../../generated/prisma/internal/prismaNamespace.ts";
+import type {
+  MessageUserStateCreateManyInput,
+  TransactionClient,
+} from "../../../../generated/prisma/internal/prismaNamespace.ts";
+import { prisma } from "../../../db/prisma.ts";
 
 export const MessageUserStateRepo = {
   create(
@@ -17,15 +21,9 @@ export const MessageUserStateRepo = {
     });
   },
 
-  createMany(
-    tx: TransactionClient,
-    data: {
-      messageId: string;
-      userId: string;
-      status: MessageStatus;
-    }[],
-  ) {
-    return tx.messageUserState.createMany({
+  createMany(data: MessageUserStateCreateManyInput[], tx?: TransactionClient) {
+    const db = tx || prisma;
+    return db.messageUserState.createMany({
       data,
     });
   },
