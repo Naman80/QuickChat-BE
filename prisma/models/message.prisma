@@ -5,16 +5,15 @@ model Message {
   content            String
   contentType        MessageContentType
   deletedForEveryone Boolean            @default(false)
-  editedAt           DateTime?
   createdAt          DateTime           @default(now())
-
+  updatedAt          DateTime           @updatedAt
   // Relations
-  conversation Conversation @relation("conversationMessages", fields: [conversationId], references: [id])
-  sender       User         @relation("messageSender", fields: [senderId], references: [id])
+  conversation       Conversation       @relation("conversationMessages", fields: [conversationId], references: [id])
+  sender             User               @relation("messageSender", fields: [senderId], references: [id])
 
   //just for completing prisma graph
-  lastMessage                Conversation?            @relation("lastMessageId")
-  participantLastReadMessage ConversationParticipant? @relation("participantLastReadMessaage")
+  lastMessage                Conversation?             @relation("lastMessageId")
+  participantLastReadMessage ConversationParticipant[] @relation("participantLastReadMessaage")
   messageUserStates          MessageUserState[]
 
   @@index([conversationId, createdAt])

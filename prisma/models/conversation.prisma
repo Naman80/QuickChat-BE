@@ -3,8 +3,8 @@ model Conversation {
   type          ConversationType
   directKey     String?          @unique
   lastMessageId String?          @unique
-  updatedAt     DateTime         @updatedAt
   createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   // Relations
   lastMessage Message? @relation("lastMessageId", fields: [lastMessageId], references: [id])

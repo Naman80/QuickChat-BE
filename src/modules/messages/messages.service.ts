@@ -159,7 +159,13 @@ export const MessageService = {
           },
           participantLastReadMessage: {
             // marking the senders last message
-            connect: { conversationId, userId: senderId, unreadCount: 0 },
+            connect: {
+              conversationId_userId: {
+                conversationId,
+                userId: senderId,
+              },
+              unreadCount: 0,
+            },
           },
 
           lastMessage: {

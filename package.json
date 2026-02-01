@@ -7,6 +7,7 @@
     "p_generate": "npx prisma generate",
     "p_migrate": "npx prisma migrate dev",
     "p_dbpush": "npx prisma db push",
+    "p_force_dbpush": "npx prisma db push --force-reset",
     "p_studio": "npx prisma studio",
     "dev": "nodemon src/index.ts --exec ts-node",
     "build": "tsc",

@@ -7,6 +7,53 @@ import type {
 import { prisma } from "../../../db/prisma.ts";
 
 export const ParticipantRepo = {
+  async getParticipantConversations(
+    userId: string,
+    select?: ConversationParticipantSelect,
+    tx?: TransactionClient,
+  ) {
+    const db = tx || prisma;
+    return db.conversationParticipant.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        conversation: {
+          updatedAt: "desc",
+        },
+      },
+      take: 30,
+      select: {
+        unreadCount: true,
+        conversation: {
+          select: {
+            id: true,
+            type: true,
+            updatedAt: true,
+            lastMessage: {
+              select: {
+                content: true,
+                contentType: true,
+                createdAt: true,
+              },
+            },
+            conversationParticipants: {
+              where: { userId: { not: userId } },
+              select: {
+                user: {
+                  select: {
+                    name: true,
+                    phone: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  },
+
   async getParticipants(
     conversationId: string,
     select?: ConversationParticipantSelect,

@@ -1,5 +1,6 @@
 import type { CreateConversationBody } from "./conversation.schema.ts";
 import { ConversationRepo } from "./repositories/conversation.repo.ts";
+import { ParticipantRepo } from "./repositories/participants.repo.ts";
 
 export const ConversationService = {
   async createConversation({ type }: CreateConversationBody) {
@@ -8,6 +9,10 @@ export const ConversationService = {
     });
 
     return conversation;
+  },
+
+  async getConversations({ userId }: { userId: string }) {
+    return await ParticipantRepo.getParticipantConversations(userId);
   },
 
   async getConversationById(id: string) {

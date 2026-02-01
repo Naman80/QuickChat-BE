@@ -3,7 +3,7 @@ import healthRoute from "./health.route.ts";
 import authRoutes from "../modules/auth/auth.routes.ts";
 import { authMiddleware } from "../middlewares/auth.middleware.ts";
 import validUserRoute from "./validUser.route.ts";
-// import userRoutes from "../modules/user/user.routes.ts";
+import userRoutes from "../modules/user/user.routes.ts";
 import conversationRoutes from "../modules/conversation/conversation.routes.ts";
 import messageRoutes from "../modules/messages/messages.routes.ts";
 
@@ -25,7 +25,7 @@ router.use(authMiddleware);
 
 router.use("/validateUser", validUserRoute);
 
-// router.use("/users", userRoutes);
+router.use("/users", userRoutes);
 router.use("/conversations", conversationRoutes);
 router.use("/messages", messageRoutes);
 

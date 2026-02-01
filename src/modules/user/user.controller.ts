@@ -1,17 +1,17 @@
-// import type { TypedController } from "../../middlewares/validation/typed.controller.ts";
-// import type { CreateUserRequest } from "./user.schema.ts";
-// import { UserService } from "./user.service.ts";
+import { TypedController } from "../../middlewares/validation/typed.controller.ts";
+import type { CreateUserRequest } from "./user.schema.ts";
+import { UserService } from "./user.service.ts";
 
-// // we wont be having this controller
-// export const createUser: TypedController<CreateUserRequest> = async (
-//   _req,
-//   res,
-// ) => {
-//   const { body } = res.locals.validated;
+// we wont be having this controller // for test purpose only
 
-//   const user = await UserService.createUser({
-//     ...body,
-//   });
+export const UserController = {
+  createUser: TypedController<CreateUserRequest>(async (_req, res) => {
+    const { body } = res.locals.validated;
 
-//   res.status(201).json(user);
-// };
+    const user = await UserService.createUser({
+      ...body,
+    });
+
+    res.status(201).json(user);
+  }),
+};

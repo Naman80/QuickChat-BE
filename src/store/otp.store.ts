@@ -11,6 +11,7 @@ export const OtpStore = {
   saveOtp(phone: string, record: TOtpRecord) {
     otpStore.set(phone, record);
   },
+
   getOtp(phone: string) {
     return otpStore.get(phone);
   },

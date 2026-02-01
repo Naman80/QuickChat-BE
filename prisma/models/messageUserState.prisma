@@ -3,12 +3,15 @@ model MessageUserState {
   userId         String
   status         MessageStatus
   deletedForUser Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   // Relations
   user    User    @relation(fields: [userId], references: [id])
   message Message @relation(fields: [messageId], references: [id])
 
   @@id([messageId, userId])
+  @@unique([messageId, userId])
   @@index([userId])
   @@index([messageId])
   @@map("MessageUserState")
