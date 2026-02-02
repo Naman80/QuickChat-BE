@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createConversationBodySchema = z.object({
-  type: z.enum(["direct", "group"]),
+  type: z.enum(["private", "group"]),
 });
 
 export const createConversationRequestSchema = z.object({

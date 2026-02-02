@@ -20,7 +20,7 @@ model Conversation {
 }
 
 enum ConversationType {
-  direct
+  private
   group
 }
 

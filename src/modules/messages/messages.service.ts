@@ -85,7 +85,7 @@ export const MessageService = {
           const conversation = await ConversationRepo.createConversation(
             {
               directKey,
-              type: ConversationType.direct,
+              type: ConversationType.private,
               conversationParticipants: {
                 createMany: {
                   data: [
